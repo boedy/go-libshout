@@ -24,7 +24,8 @@ import (
 )
 
 /*
-#cgo LDFLAGS: -lshout
+#cgo CFLAGS: -I /usr/local/Cellar/libshout/2.3.1/include/
+#cgo LDFLAGS: -L /usr/local/Cellar/libshout/2.3.1/lib/ -l shout
 #include <stdlib.h>
 #include <shout/shout.h>
 */
@@ -80,9 +81,9 @@ type Shout struct {
 	Protocol int
 
 	// wrap the native C struct
-	struc *C.struct_shout
+	struc    *C.struct_shout
 	metadata *C.struct_shout_metadata_t
-	
+
 	stream chan []byte
 }
 
@@ -148,6 +149,7 @@ func (s *Shout) GetError() string {
 
 func (s *Shout) Open() (chan<- []byte, error) {
 	s.lazyInit()
+	s.SetDescription("some description")
 
 	errcode := int(C.shout_open(s.struc))
 	if errcode != C.SHOUTERR_SUCCESS {
@@ -193,13 +195,32 @@ func (s *Shout) handleStream() {
 	}
 }
 
-func (s *Shout) UpdateMetadata( mname string, mvalue string ) {
+func (s *Shout) UpdateMetadata(mname string, mvalue string) {
 	md := C.shout_metadata_new()
 	ptr1 := C.CString(mname)
 	ptr2 := C.CString(mvalue)
-	C.shout_metadata_add( md, ptr1, ptr2 )
+	C.shout_metadata_add(md, ptr1, ptr2)
 	C.free(unsafe.Pointer(ptr1))
 	C.free(unsafe.Pointer(ptr2))
-	C.shout_set_metadata( s.struc, md )
+	C.shout_set_metadata(s.struc, md)
 	C.shout_metadata_free(md)
+}
+
+func (s *Shout) SetGenre(name string) int {
+	ptr1 := C.CString(name)
+	success := int(C.shout_set_genre(s.struc, ptr1))
+	C.free(unsafe.Pointer(ptr1))
+	return success
+}
+
+func (s *Shout) GetGenre() string {
+	return C.GoString(C.shout_get_genre(s.struc))
+}
+
+func (s *Shout) SetDescription(description string) int {
+	ptr1 := C.CString(description)
+	success := int(C.shout_set_description(s.struc, ptr1))
+	fmt.Println("Set description success: ", success)
+	C.free(unsafe.Pointer(ptr1))
+	return success
 }
