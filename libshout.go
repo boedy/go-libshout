@@ -99,7 +99,7 @@ func Free(s *Shout) {
 	C.shout_free(s.struc)
 }
 
-func (s *Shout) lazyInit() {
+func (s *Shout) LazyInit() {
 	if s.struc != nil {
 		return
 	}
@@ -142,14 +142,13 @@ func (s *Shout) updateParameters() {
 }
 
 func (s *Shout) GetError() string {
-	s.lazyInit()
+	s.LazyInit()
 	err := C.shout_get_error(s.struc)
 	return C.GoString(err)
 }
 
 func (s *Shout) Open() (chan<- []byte, error) {
-	s.lazyInit()
-	s.SetDescription("some description")
+	s.LazyInit()
 
 	errcode := int(C.shout_open(s.struc))
 	if errcode != C.SHOUTERR_SUCCESS {
